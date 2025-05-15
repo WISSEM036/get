@@ -1,4 +1,24 @@
 <?php
+<?php
+// Début du HTML
+echo '<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Résultat GPS Tracker</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f7f7f7; margin: 40px; }
+        .container { background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px #ccc; max-width: 600px; margin: auto; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        .info { margin-top: 20px; }
+    </style>
+</head>
+<body>
+<div class="container">
+<h2>Résultat de l\'opération</h2>
+';
+
 // Connexion à la base de données
 $servername = "localhost";
 $username = "root";
@@ -10,21 +30,27 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 
 // Vérifier la connexion
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    echo '<p class="error">Erreur de connexion : ' . $conn->connect_error . '</p>';
+    echo '</div></body></html>';
+    exit();
 }
 
 // Vérifier que toutes les données requises sont présentes
 $required_params = ['imei', 'latitude', 'longitude', 'temperature', 'accel_x', 'accel_y', 'accel_z'];
 foreach ($required_params as $param) {
     if (!isset($_GET[$param])) {
-        die("Error: Missing parameter '$param' in the request.");
+        echo '<p class="error">Erreur : paramètre manquant "' . htmlspecialchars($param) . '" dans la requête.</p>';
+        echo '</div></body></html>';
+        exit();
     }
 }
 
 // Nettoyer et valider les données
 $imei = preg_replace('/[^0-9]/', '', $_GET['imei']);
 if (strlen($imei) !== 15) {
-    die("Error: Invalid IMEI format (must be 15 digits)");
+    echo '<p class="error">Erreur : format IMEI invalide (15 chiffres requis)</p>';
+    echo '</div></body></html>';
+    exit();
 }
 
 $new_latitude = floatval($_GET['latitude']);
@@ -93,9 +119,10 @@ if ($check_stmt->num_rows > 0) {
                            $accel_x, $accel_y, $accel_z, $speed, $imei);
     
     if ($update_stmt->execute()) {
-        echo "Device data updated successfully. Speed: " . round($speed, 2) . " km/h";
+        echo '<p class="success">Données de l\'appareil mises à jour avec succès.</p>';
+        echo '<div class="info">Vitesse calculée : <strong>' . round($speed, 2) . ' km/h</strong></div>';
     } else {
-        echo "Error updating device: " . $update_stmt->error;
+        echo '<p class="error">Erreur lors de la mise à jour : ' . $update_stmt->error . '</p>';
     }
     
     $update_stmt->close();
@@ -111,9 +138,10 @@ if ($check_stmt->num_rows > 0) {
                            $temperature, $accel_x, $accel_y, $accel_z, $speed);
     
     if ($insert_stmt->execute()) {
-        echo "New device created and data inserted successfully. Speed: " . round($speed, 2) . " km/h";
+        echo '<p class="success">Nouvel appareil créé et données insérées avec succès.</p>';
+        echo '<div class="info">Vitesse calculée : <strong>' . round($speed, 2) . ' km/h</strong></div>';
     } else {
-        echo "Error inserting new device: " . $insert_stmt->error;
+        echo '<p class="error">Erreur lors de l\'insertion : ' . $insert_stmt->error . '</p>';
     }
     
     $insert_stmt->close();
@@ -122,4 +150,6 @@ if ($check_stmt->num_rows > 0) {
 // Fermer les connexions
 $check_stmt->close();
 $conn->close();
+
+echo '</div></body></html>';
 ?>
